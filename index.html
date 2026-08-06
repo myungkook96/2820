@@ -1,0 +1,978 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>PHOTO VOICE — 사진 한 장에서 스레드 글 5개</title>
+<style>
+  :root{
+    --bg:#0b0c0e;
+    --bg2:#121417;
+    --card:#16181c;
+    --card2:#1b1e23;
+    --line:#25292f;
+    --line2:#33383f;
+    --txt:#e9ecef;
+    --dim:#9aa3ad;
+    --dim2:#6b737d;
+    --accent:#f5d76e;
+    --accent2:#e8c14a;
+    --danger:#ff6b6b;
+    --ok:#7ee0a8;
+    --radius:14px;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--bg);
+    color:var(--txt);
+    font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Malgun Gothic","Segoe UI",Roboto,sans-serif;
+    font-size:15px;line-height:1.65;
+    padding:0 0 60px;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:640px;margin:0 auto;padding:0 16px}
+
+  header{padding:26px 0 14px;text-align:center}
+  .logo{font-size:22px;letter-spacing:.34em;font-weight:700;margin:0 0 6px}
+  .logo span{color:var(--accent)}
+  .tag{color:var(--dim);font-size:12.5px;letter-spacing:.02em;margin:0}
+
+  /* key bar */
+  .keybar{display:flex;gap:8px;margin:14px 0 6px}
+  .keybar input{
+    flex:1;min-width:0;background:var(--bg2);border:1px solid var(--line);
+    color:var(--txt);border-radius:10px;padding:11px 12px;font-size:13px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+  }
+  .keybar input:focus{outline:none;border-color:var(--accent2)}
+  .keybar button{
+    background:var(--card2);border:1px solid var(--line);color:var(--txt);
+    border-radius:10px;padding:0 14px;font-size:13px;cursor:pointer;white-space:nowrap;
+  }
+  .keybar button:hover{border-color:var(--line2)}
+  .banner{
+    background:rgba(245,215,110,.08);border:1px solid rgba(245,215,110,.28);
+    color:#f0dfa4;border-radius:10px;padding:10px 12px;font-size:12.5px;margin:8px 0 0;line-height:1.55;
+  }
+  .banner.hidden{display:none}
+  .keyhint{color:var(--dim2);font-size:11.5px;margin:6px 2px 0}
+
+  /* drop */
+  .drop{
+    margin-top:18px;border:1.5px dashed var(--line2);border-radius:var(--radius);
+    background:var(--bg2);padding:34px 18px;text-align:center;cursor:pointer;
+    transition:border-color .15s,background .15s;
+  }
+  .drop:hover{border-color:var(--accent2);background:#14161a}
+  .drop.over{border-color:var(--accent);background:rgba(245,215,110,.06)}
+  .drop .ic{font-size:26px;opacity:.75}
+  .drop .t{font-size:14.5px;margin-top:8px}
+  .drop .s{font-size:12px;color:var(--dim2);margin-top:5px}
+  .preview{position:relative;margin-top:18px;border-radius:var(--radius);overflow:hidden;border:1px solid var(--line)}
+  .preview img{display:block;width:100%;max-height:340px;object-fit:cover}
+  .preview .meta{
+    position:absolute;left:0;right:0;bottom:0;padding:8px 12px;font-size:11.5px;color:#cfd5db;
+    background:linear-gradient(to top,rgba(0,0,0,.82),rgba(0,0,0,0));
+  }
+  .preview .x{
+    position:absolute;top:9px;right:9px;width:30px;height:30px;border-radius:50%;
+    background:rgba(0,0,0,.6);border:1px solid rgba(255,255,255,.2);color:#fff;
+    font-size:15px;line-height:1;cursor:pointer;
+  }
+  .hidden{display:none}
+
+  /* options */
+  .opts{margin-top:20px}
+  .grp{margin-bottom:12px}
+  .grp .lb{font-size:11.5px;color:var(--dim2);letter-spacing:.06em;margin-bottom:7px}
+  .chips{display:flex;flex-wrap:wrap;gap:6px}
+  .chip{
+    background:var(--card);border:1px solid var(--line);color:var(--dim);
+    border-radius:999px;padding:6px 13px;font-size:12.5px;cursor:pointer;transition:.13s;
+  }
+  .chip:hover{border-color:var(--line2);color:var(--txt)}
+  .chip.on{background:var(--accent);border-color:var(--accent);color:#151208;font-weight:600}
+  textarea#ctx{
+    width:100%;background:var(--bg2);border:1px solid var(--line);color:var(--txt);
+    border-radius:11px;padding:12px;font-size:13.5px;font-family:inherit;line-height:1.6;resize:vertical;min-height:64px;
+  }
+  textarea#ctx:focus{outline:none;border-color:var(--accent2)}
+  textarea#ctx::placeholder{color:var(--dim2)}
+
+  /* go */
+  .go{
+    width:100%;margin-top:18px;background:var(--accent);border:none;color:#151208;
+    font-size:15.5px;font-weight:700;padding:15px;border-radius:12px;cursor:pointer;letter-spacing:.02em;
+    font-family:inherit;
+  }
+  .go:hover{background:var(--accent2)}
+  .go:disabled{background:#2a2d33;color:var(--dim2);cursor:not-allowed}
+
+  .loading{text-align:center;padding:36px 10px;color:var(--dim)}
+  .spin{
+    width:26px;height:26px;margin:0 auto 14px;border:2px solid var(--line2);
+    border-top-color:var(--accent);border-radius:50%;animation:sp .8s linear infinite;
+  }
+  @keyframes sp{to{transform:rotate(360deg)}}
+  #loadMsg{font-size:13.5px;animation:fade .5s}
+  @keyframes fade{from{opacity:.2}to{opacity:1}}
+
+  .err{
+    background:rgba(255,107,107,.09);border:1px solid rgba(255,107,107,.35);color:#ffb3b3;
+    border-radius:11px;padding:12px 13px;font-size:13px;margin-top:16px;white-space:pre-wrap;line-height:1.6;
+  }
+
+  /* read line */
+  .read{
+    margin-top:24px;padding:14px 16px;border-left:2px solid var(--accent);
+    background:var(--bg2);border-radius:0 11px 11px 0;font-size:14px;color:#dfe4ea;
+  }
+  .read b{display:block;font-size:10.5px;letter-spacing:.14em;color:var(--accent);margin-bottom:5px;font-weight:600}
+
+  /* cards */
+  .card{
+    background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    padding:16px;margin-top:14px;
+  }
+  .chead{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+  .tone{font-size:13.5px;font-weight:700}
+  .goal{font-size:11px;color:#151208;background:var(--accent);padding:2.5px 9px;border-radius:999px;white-space:nowrap;font-weight:600}
+  .body{
+    white-space:pre-wrap;word-break:break-word;font-size:15px;line-height:1.85;color:#f0f2f4;
+    background:var(--bg2);border-radius:11px;padding:15px;border:1px solid #1e2126;
+  }
+  .tags{margin-top:9px;font-size:12.5px;color:#8fb8e0}
+  .cfoot{display:flex;align-items:center;gap:8px;margin-top:12px;flex-wrap:wrap}
+  .cnt{font-size:11.5px;color:var(--dim2);margin-right:auto}
+  .cnt.over{color:var(--danger);font-weight:700}
+  .btn{
+    background:var(--card2);border:1px solid var(--line2);color:var(--txt);
+    border-radius:9px;padding:7px 13px;font-size:12.5px;cursor:pointer;font-family:inherit;
+  }
+  .btn:hover{border-color:#4a515a}
+  .btn.pri{background:var(--accent);border-color:var(--accent);color:#151208;font-weight:600}
+  .btn:disabled{opacity:.5;cursor:wait}
+  details.fc{margin-top:11px;border-top:1px solid var(--line);padding-top:10px}
+  details.fc summary{font-size:12.5px;color:var(--dim);cursor:pointer;list-style:none;user-select:none}
+  details.fc summary::-webkit-details-marker{display:none}
+  details.fc summary:before{content:"▸ ";color:var(--accent)}
+  details.fc[open] summary:before{content:"▾ "}
+  .fcbody{margin-top:9px;font-size:13.5px;color:#dbe0e6;background:var(--bg2);border-radius:9px;padding:11px;white-space:pre-wrap}
+
+  /* bottom */
+  .bottom{display:flex;gap:8px;margin-top:22px}
+  .bottom .btn{flex:1;padding:12px;font-size:13.5px;text-align:center}
+
+  .hist{margin-top:34px;border-top:1px solid var(--line);padding-top:18px}
+  .hist h3{font-size:11.5px;letter-spacing:.12em;color:var(--dim2);margin:0 0 11px;font-weight:600}
+  .hitem{display:flex;gap:11px;align-items:center;background:var(--card);border:1px solid var(--line);
+    border-radius:11px;padding:9px;margin-bottom:8px;cursor:pointer}
+  .hitem:hover{border-color:var(--line2)}
+  .hitem img{width:48px;height:48px;border-radius:8px;object-fit:cover;flex:none;background:#000}
+  .hitem .ht{flex:1;min-width:0}
+  .hitem .h1{font-size:12.5px;color:#dfe4ea;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .hitem .h2{font-size:11px;color:var(--dim2);margin-top:2px}
+
+  .toast{
+    position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(14px);
+    background:#f2f4f6;color:#111;padding:10px 20px;border-radius:999px;font-size:13px;font-weight:600;
+    opacity:0;pointer-events:none;transition:.22s;z-index:99;
+  }
+  .toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+  footer{text-align:center;color:var(--dim2);font-size:11px;margin-top:40px;line-height:1.7}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1 class="logo">PHOTO<span>·</span>VOICE</h1>
+    <p class="tag">사진 한 장 → 스크롤을 멈추게 하는 스레드 글 5개</p>
+  </header>
+
+  <div class="keybar">
+    <input id="key" type="password" placeholder="Anthropic API Key (sk-ant-...)" autocomplete="off" spellcheck="false">
+    <button id="keySave" type="button">저장</button>
+    <button id="keyEye" type="button">👁</button>
+  </div>
+  <p class="keyhint">키는 이 브라우저(localStorage)에만 저장되고 서버로 전송되지 않습니다.</p>
+  <div id="banner" class="banner hidden">API 키가 필요합니다. 위 칸에 키를 넣고 <b>저장</b>을 누르세요. 키는 console.anthropic.com 에서 발급받을 수 있습니다.</div>
+
+  <div id="drop" class="drop">
+    <div class="ic">🖼</div>
+    <div class="t">사진을 끌어다 놓거나 <u>클릭해서 선택</u></div>
+    <div class="s">Ctrl / Cmd + V 로 붙여넣기도 됩니다 · JPG PNG WEBP</div>
+  </div>
+  <input id="file" type="file" accept="image/*" class="hidden">
+
+  <div id="preview" class="preview hidden">
+    <img id="pimg" alt="업로드한 사진 미리보기">
+    <button id="pdel" class="x" type="button" title="제거">✕</button>
+    <div id="pmeta" class="meta"></div>
+  </div>
+
+  <div class="opts">
+    <div class="grp">
+      <div class="lb">상황</div>
+      <div class="chips" id="gSit"></div>
+    </div>
+    <div class="grp">
+      <div class="lb">화자</div>
+      <div class="chips" id="gSpk"></div>
+    </div>
+    <div class="grp">
+      <div class="lb">길이</div>
+      <div class="chips" id="gLen"></div>
+    </div>
+    <div class="grp">
+      <div class="lb">추가 맥락 (선택 · 한 줄이면 충분합니다)</div>
+      <textarea id="ctx" placeholder="이 사진, 어떤 날이었나요? — 예: 3년 다닌 회사 마지막 출근길에 찍었어요. / 아버지가 처음으로 직접 끓여준 국."></textarea>
+    </div>
+  </div>
+
+  <button id="go" class="go" type="button">글 5개 만들기</button>
+
+  <div id="loading" class="loading hidden">
+    <div class="spin"></div>
+    <div id="loadMsg">사진 속 온도를 재는 중…</div>
+  </div>
+
+  <div id="error" class="err hidden"></div>
+
+  <div id="out"></div>
+
+  <div id="bottom" class="bottom hidden">
+    <button id="copyAll" class="btn" type="button">전체 복사</button>
+    <button id="reset" class="btn" type="button">초기화</button>
+  </div>
+
+  <div id="hist" class="hist hidden">
+    <h3>최근 생성</h3>
+    <div id="histList"></div>
+  </div>
+
+  <footer>
+    PHOTO VOICE · 단일 HTML · 브라우저에서 Anthropic API 직접 호출<br>
+    생성된 글은 초안입니다. 당신의 문장 하나를 더 얹으면 반응이 달라집니다.
+  </footer>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ---------------- constants ---------------- */
+  var LS_KEY = "pv_api_key";
+  var LS_HIST = "pv_history_v1";
+  var MODEL = "claude-sonnet-4-6";
+  var MAX_EDGE = 1568;
+
+  var SITUATIONS = ["자동감지", "일상", "비즈니스", "여행", "음식", "사람·관계", "자연"];
+  var SPEAKERS = ["자동", "나(1인칭)", "관찰자"];
+  var LENGTHS = ["짧게(150자)", "보통(300자)", "길게(450자)"];
+
+  var TONES = [
+    { tone: "담백한 관찰자", goal: "저장·리포스트" },
+    { tone: "조용한 고백", goal: "팔로우" },
+    { tone: "한 줄 통찰", goal: "리포스트" },
+    { tone: "대화 초대", goal: "댓글" },
+    { tone: "짧은 이야기", goal: "링크 공유" }
+  ];
+
+  var LOAD_MSGS = [
+    "사진 속 온도를 재는 중…",
+    "의도되지 않은 디테일을 찾는 중…",
+    "감정을 하나로 좁히는 중…",
+    "첫 줄을 열다섯 글자로 깎는 중…",
+    "설명을 지우고 여백을 놓는 중…",
+    "AI 티가 나는 문장을 버리는 중…",
+    "다섯 개의 다른 각도를 고르는 중…",
+    "댓글이 달릴 자리를 비워두는 중…"
+  ];
+
+  /* ---------------- state ---------------- */
+  var state = {
+    b64: null,
+    mime: "image/jpeg",
+    dataUrl: null,
+    thumb: null,
+    fileName: "",
+    dims: "",
+    sit: "자동감지",
+    spk: "자동",
+    len: "보통(300자)",
+    read: "",
+    posts: []
+  };
+
+  /* ---------------- dom ---------------- */
+  function $(id) { return document.getElementById(id); }
+  var elKey = $("key"), elBanner = $("banner"), elDrop = $("drop"), elFile = $("file");
+  var elPrev = $("preview"), elPImg = $("pimg"), elPMeta = $("pmeta");
+  var elGo = $("go"), elLoading = $("loading"), elLoadMsg = $("loadMsg");
+  var elErr = $("error"), elOut = $("out"), elBottom = $("bottom");
+  var elHist = $("hist"), elHistList = $("histList"), elToast = $("toast");
+
+  /* ---------------- utils ---------------- */
+  function esc(s) {
+    return String(s == null ? "" : s)
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+  }
+  var toastTimer = null;
+  function toast(msg) {
+    elToast.textContent = msg;
+    elToast.classList.add("on");
+    if (toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { elToast.classList.remove("on"); }, 1600);
+  }
+  function showErr(msg) {
+    elErr.textContent = msg;
+    elErr.classList.remove("hidden");
+  }
+  function clearErr() {
+    elErr.textContent = "";
+    elErr.classList.add("hidden");
+  }
+  function copyText(text) {
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(text).then(function () { toast("복사됨"); }, function () { fallbackCopy(text); });
+    } else {
+      fallbackCopy(text);
+    }
+  }
+  function fallbackCopy(text) {
+    var ta = document.createElement("textarea");
+    ta.value = text;
+    ta.setAttribute("readonly", "");
+    ta.style.position = "fixed";
+    ta.style.top = "-1000px";
+    document.body.appendChild(ta);
+    ta.select();
+    var ok = false;
+    try { ok = document.execCommand("copy"); } catch (e) { ok = false; }
+    document.body.removeChild(ta);
+    toast(ok ? "복사됨" : "복사 실패 — 직접 선택해 주세요");
+  }
+
+  /* ---------------- api key ---------------- */
+  function getKey() { return (elKey.value || "").trim(); }
+  function syncBanner() {
+    if (getKey()) elBanner.classList.add("hidden");
+    else elBanner.classList.remove("hidden");
+  }
+  (function initKey() {
+    var saved = "";
+    try { saved = localStorage.getItem(LS_KEY) || ""; } catch (e) { saved = ""; }
+    if (saved) elKey.value = saved;
+    syncBanner();
+  })();
+  $("keySave").addEventListener("click", function () {
+    var k = getKey();
+    try {
+      if (k) { localStorage.setItem(LS_KEY, k); toast("키 저장됨"); }
+      else { localStorage.removeItem(LS_KEY); toast("키 삭제됨"); }
+    } catch (e) { toast("저장 실패 (브라우저 저장소 차단)"); }
+    syncBanner();
+  });
+  $("keyEye").addEventListener("click", function () {
+    elKey.type = elKey.type === "password" ? "text" : "password";
+  });
+  elKey.addEventListener("input", syncBanner);
+
+  /* ---------------- chips ---------------- */
+  function buildChips(containerId, values, current, onPick) {
+    var box = $(containerId);
+    box.innerHTML = "";
+    values.forEach(function (v) {
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = "chip" + (v === current ? " on" : "");
+      b.textContent = v;
+      b.addEventListener("click", function () {
+        var kids = box.querySelectorAll(".chip");
+        for (var i = 0; i < kids.length; i++) kids[i].classList.remove("on");
+        b.classList.add("on");
+        onPick(v);
+      });
+      box.appendChild(b);
+    });
+  }
+  buildChips("gSit", SITUATIONS, state.sit, function (v) { state.sit = v; });
+  buildChips("gSpk", SPEAKERS, state.spk, function (v) { state.spk = v; });
+  buildChips("gLen", LENGTHS, state.len, function (v) { state.len = v; });
+
+  /* ---------------- image ---------------- */
+  function readAsDataURL(file) {
+    return new Promise(function (resolve, reject) {
+      var fr = new FileReader();
+      fr.onload = function () { resolve(fr.result); };
+      fr.onerror = function () { reject(new Error("파일을 읽지 못했습니다.")); };
+      fr.readAsDataURL(file);
+    });
+  }
+  function loadImage(src) {
+    return new Promise(function (resolve, reject) {
+      var img = new Image();
+      img.onload = function () { resolve(img); };
+      img.onerror = function () { reject(new Error("이미지 형식을 인식하지 못했습니다. JPG / PNG / WEBP 파일을 사용해 주세요.")); };
+      img.src = src;
+    });
+  }
+  function drawTo(img, maxEdge, quality) {
+    var w = img.naturalWidth || img.width;
+    var h = img.naturalHeight || img.height;
+    var scale = Math.min(1, maxEdge / Math.max(w, h));
+    var cw = Math.max(1, Math.round(w * scale));
+    var ch = Math.max(1, Math.round(h * scale));
+    var cv = document.createElement("canvas");
+    cv.width = cw; cv.height = ch;
+    var cx = cv.getContext("2d");
+    if (!cx) throw new Error("이 브라우저에서 캔버스를 사용할 수 없습니다.");
+    cx.fillStyle = "#000";
+    cx.fillRect(0, 0, cw, ch);
+    cx.drawImage(img, 0, 0, cw, ch);
+    return { url: cv.toDataURL("image/jpeg", quality), w: cw, h: ch };
+  }
+
+  function handleFile(file) {
+    if (!file) return;
+    if (!/^image\//.test(file.type)) {
+      showErr("이미지 파일이 아닙니다. JPG / PNG / WEBP 를 올려주세요.");
+      return;
+    }
+    clearErr();
+    readAsDataURL(file)
+      .then(function (url) { return loadImage(url); })
+      .then(function (img) {
+        var big = drawTo(img, MAX_EDGE, 0.9);
+        // 5MB(base64 기준) 초과면 화질을 낮춰 재압축
+        var q = 0.9;
+        while (big.url.length * 0.75 > 5 * 1024 * 1024 && q > 0.4) {
+          q -= 0.15;
+          big = drawTo(img, MAX_EDGE, q);
+        }
+        if (big.url.length * 0.75 > 5 * 1024 * 1024) {
+          throw new Error("이미지가 너무 큽니다. 리사이즈 후에도 5MB를 넘습니다. 더 작은 사진을 사용해 주세요.");
+        }
+        var small = drawTo(img, 160, 0.7);
+        state.dataUrl = big.url;
+        state.b64 = big.url.split(",")[1];
+        state.mime = "image/jpeg";
+        state.thumb = small.url;
+        state.fileName = file.name || "붙여넣은 이미지";
+        state.dims = big.w + " × " + big.h;
+        elPImg.src = big.url;
+        elPMeta.textContent = state.fileName + " · " + state.dims + " · " + Math.round(state.b64.length * 0.75 / 1024) + "KB";
+        elPrev.classList.remove("hidden");
+        elDrop.classList.add("hidden");
+      })
+      .catch(function (e) { showErr(e.message || String(e)); });
+  }
+
+  elDrop.addEventListener("click", function () { elFile.click(); });
+  elFile.addEventListener("change", function () {
+    if (elFile.files && elFile.files[0]) handleFile(elFile.files[0]);
+    elFile.value = "";
+  });
+  ["dragenter", "dragover"].forEach(function (ev) {
+    elDrop.addEventListener(ev, function (e) { e.preventDefault(); elDrop.classList.add("over"); });
+  });
+  ["dragleave", "drop"].forEach(function (ev) {
+    elDrop.addEventListener(ev, function (e) { e.preventDefault(); elDrop.classList.remove("over"); });
+  });
+  elDrop.addEventListener("drop", function (e) {
+    e.preventDefault();
+    var dt = e.dataTransfer;
+    if (dt && dt.files && dt.files[0]) handleFile(dt.files[0]);
+  });
+  window.addEventListener("dragover", function (e) { e.preventDefault(); });
+  window.addEventListener("drop", function (e) { e.preventDefault(); });
+
+  document.addEventListener("paste", function (e) {
+    var items = (e.clipboardData && e.clipboardData.items) || [];
+    for (var i = 0; i < items.length; i++) {
+      if (items[i].kind === "file" && /^image\//.test(items[i].type)) {
+        var f = items[i].getAsFile();
+        if (f) { e.preventDefault(); handleFile(f); toast("사진 붙여넣기 완료"); return; }
+      }
+    }
+  });
+
+  $("pdel").addEventListener("click", function (e) {
+    e.stopPropagation();
+    state.b64 = null; state.dataUrl = null; state.thumb = null;
+    elPrev.classList.add("hidden");
+    elDrop.classList.remove("hidden");
+  });
+
+  /* ---------------- prompt engine ---------------- */
+  function lengthSpec() {
+    if (state.len.indexOf("짧게") === 0) return "약 150자 (공백 포함, ±40자)";
+    if (state.len.indexOf("길게") === 0) return "약 450자 (공백 포함, ±60자)";
+    return "약 300자 (공백 포함, ±50자)";
+  }
+  function speakerSpec() {
+    if (state.spk === "나(1인칭)") return "1인칭 '나'의 목소리. 내 경험으로 쓴다.";
+    if (state.spk === "관찰자") return "관찰자 시점. 장면 바깥에서 담담히 본다. '나'를 앞세우지 않는다.";
+    return "사진에 가장 어울리는 시점을 스스로 고른다. 다만 5개 글 전체가 같은 시점이 되지 않게 한다.";
+  }
+  function situationSpec() {
+    if (state.sit === "자동감지") return "사진을 보고 상황을 스스로 판단한다. 억지로 카테고리에 끼워 맞추지 않는다.";
+    return "'" + state.sit + "' 상황의 맥락으로 읽는다. 다만 사진이 명백히 다른 이야기를 한다면 사진을 우선한다.";
+  }
+
+  var CORE = [
+    "너는 15년간 브랜드 카피와 에세이를 써온 작가다. 지금 스레드(Threads)용 한국어 글을 쓴다.",
+    "성공 기준은 '잘 쓴 글'이 아니라 '반응이 오는 글'이다. 문학적 완성도보다 스크롤 정지력과 대화 유발력이 우선이다.",
+    "",
+    "[1단계 · 관찰]",
+    "사진에서 사실만 뽑는다. 빛의 방향과 시간대, 색의 온도, 질감, 정리된 정도, 사람의 손 위치와 시선, 배경에 우연히 찍힌 것.",
+    "특히 의도되지 않은 디테일을 찾아라. 그게 진짜 이야기다.",
+    "",
+    "[2단계 · 발굴]",
+    "이 장면이 건드리는 보편 감정을 하나만 고른다.",
+    "후보: 그리움 / 안도 / 버티는 중 / 뒤늦은 깨달음 / 사소한 자부심 / 말 못 한 미안함 / 아직 괜찮다는 확인.",
+    "욕심내서 두세 개를 섞지 마라. 하나로 좁힐수록 반응이 온다.",
+    "",
+    "[3단계 · 연결]",
+    "내 이야기에서 읽는 사람 이야기로 넘어가는 다리를 놓는다. 다리는 설명이 아니라 여백이다.",
+    "",
+    "[스레드 최적 구조]",
+    "1행   훅 — 15자 이내. 사실 한 조각, 숫자, 또는 반전.",
+    "      (빈 줄)",
+    "2~4행 장면 — 감정 단어 없이 감정을 전달. 동사와 명사로만.",
+    "      (빈 줄)",
+    "5~7행 전환 — '그런데' 지점. 여기서 글이 사진을 벗어난다.",
+    "      (빈 줄)",
+    "끝    여운 또는 초대 — 답을 주지 말고 자리를 비워둘 것.",
+    "- 한 문단은 최대 2줄. 빈 줄을 아끼지 마라. 모바일에서 숨 쉴 공간이 곧 가독성이다.",
+    "- 첫 두 줄 안에 승부를 본다. 미리보기에서 잘리는 지점이다.",
+    "",
+    "[금지 목록 — 하나라도 어기면 그 글은 버리고 다시 쓴다]",
+    "- 호칭: \"여러분\", \"우리 모두\", \"당신도\"",
+    "- 어미: \"~인 것 같아요\", \"~하곤 하죠\", \"~이 아닐까요\"",
+    "- 마무리 상투구: \"오늘도 수고했어요\", \"화이팅\", \"잊지 마세요\", \"결국 중요한 건 OO이니까요\"",
+    "- 대구법 남발: \"A가 아니라 B다\" 형식은 글당 최대 1회",
+    "- 이모지 2개 초과, 문장 끝 이모지",
+    "- 해시태그 3개 초과 (없어도 된다. 붙일 땐 맨 아래 한 줄)",
+    "- 사진 설명 나열 (\"따뜻한 햇살이 비치는 창가에는…\")",
+    "- 없는 사실 지어내기 — 사진에 없는 사람·사건·수치 금지",
+    "",
+    "[자가 검증 — 출력 전 각 글을 스스로 통과시킬 것]",
+    "1. 첫 줄만 읽고 다음 줄이 궁금한가?",
+    "2. 사진 없이 글만 읽어도 성립하는가? (성립해야 한다)",
+    "3. 이 글을 남의 계정에 붙여넣으면 어색한가? (어색해야 한다 = 고유함)",
+    "4. 읽고 나서 댓글로 쓰고 싶은 말이 자동으로 떠오르는가?",
+    "5. AI가 쓴 티가 나는가? (나면 폐기하고 다시 쓴다)"
+  ].join("\n");
+
+  var TONE_TABLE = [
+    "[5가지 톤 — 각각 노리는 반응이 다르다]",
+    "1. 담백한 관찰자 · 감정 형용사 0개. 사실만으로 감정을 남긴다. → 저장·리포스트",
+    "2. 조용한 고백 · 나의 약함·실수·못난 마음을 먼저 꺼낸다. → 팔로우",
+    "3. 한 줄 통찰 · 장면에서 원칙을 뽑되, 훈계하지 않는다. → 리포스트",
+    "4. 대화 초대 · 내 경험에서 열린 질문으로. 질문은 대답하기 쉬워야 한다. → 댓글",
+    "5. 짧은 이야기 · 시간의 흐름이 있는 미니 서사. 첫 줄과 끝 줄이 호응한다. → 링크 공유",
+    "",
+    "중요: 5개 글은 서로 다른 감정, 다른 첫 문장, 다른 각도여야 한다. 같은 내용의 어투만 바꾼 5개는 실패다."
+  ].join("\n");
+
+  function conditions() {
+    var ctx = ($("ctx").value || "").trim();
+    var lines = [
+      "[이번 작업 조건]",
+      "- 상황: " + situationSpec(),
+      "- 화자: " + speakerSpec(),
+      "- 분량: 각 글 본문 " + lengthSpec() + ". 빈 줄도 분량에 포함해 감각적으로 맞춘다.",
+      "- 언어: 한국어."
+    ];
+    if (ctx) {
+      lines.push("- 사용자가 준 배경(가장 중요한 재료다. 사진보다 이 한 줄이 글의 진정성을 만든다. 반드시 5개 글 전체에 녹여라. 단, 그대로 옮겨 적지는 마라): " + ctx);
+    } else {
+      lines.push("- 추가 배경 없음. 사진에서만 근거를 찾는다. 없는 사실을 만들지 마라.");
+    }
+    return lines.join("\n");
+  }
+
+  var OUTPUT_RULE = [
+    "[출력 형식 — 반드시 지킬 것]",
+    "JSON만 반환한다. 마크다운 코드펜스, 머리말, 설명, 인사말 일절 금지. 첫 글자는 { 이고 마지막 글자는 } 다.",
+    "{",
+    '  "read": "사진에서 읽어낸 핵심 감정 한 줄",',
+    '  "posts": [',
+    "    {",
+    '      "tone": "담백한 관찰자",',
+    '      "goal": "저장·리포스트",',
+    '      "body": "본문\\n\\n줄바꿈 포함",',
+    '      "first_comment": "이어붙일 첫 댓글 한 줄",',
+    '      "hashtags": ["태그1", "태그2"]',
+    "    }",
+    "  ]",
+    "}",
+    "body 안의 줄바꿈은 \\n 으로 이스케이프한다. hashtags 는 # 없이 단어만, 0~3개. 필요 없으면 빈 배열."
+  ].join("\n");
+
+  function buildFullPrompt() {
+    return [
+      CORE, "", TONE_TABLE, "", conditions(), "",
+      "[할 일]",
+      "위 3단 사고 프로세스를 내부적으로 거친 뒤, 5가지 톤의 글을 각각 1개씩 정확히 5개 쓴다. posts 배열의 순서는 위 톤 표의 1~5번 순서와 같아야 한다.",
+      "first_comment 는 작성자 본인이 자기 글에 이어 다는 첫 댓글이다. 본문의 여백을 닫지 말고, 한 걸음 더 들어가거나 대답하기 쉬운 한 마디여야 한다.",
+      "", OUTPUT_RULE
+    ].join("\n");
+  }
+
+  function buildSinglePrompt(idx) {
+    var t = TONES[idx];
+    return [
+      CORE, "", TONE_TABLE, "", conditions(), "",
+      "[할 일]",
+      "위 3단 사고 프로세스를 내부적으로 거친 뒤, 오직 '" + t.tone + "' 톤(노리는 반응: " + t.goal + ") 글 1개만 새로 쓴다.",
+      "이전에 쓴 것과는 다른 감정, 다른 첫 문장, 다른 각도로 접근한다.",
+      "first_comment 는 작성자 본인이 자기 글에 이어 다는 첫 댓글이다.",
+      "",
+      "[출력 형식 — 반드시 지킬 것]",
+      "JSON만 반환한다. 코드펜스·설명 금지. posts 배열에는 요소가 정확히 1개다.",
+      '{ "read": "한 줄", "posts": [ { "tone": "' + t.tone + '", "goal": "' + t.goal + '", "body": "본문\\n\\n줄바꿈", "first_comment": "한 줄", "hashtags": [] } ] }'
+    ].join("\n");
+  }
+
+  /* ---------------- api ---------------- */
+  function callAPI(promptText) {
+    var apiKey = getKey();
+    if (!apiKey) return Promise.reject(new Error("API 키가 없습니다. 화면 위쪽에 키를 입력하고 저장해 주세요."));
+    if (!state.b64) return Promise.reject(new Error("사진을 먼저 올려주세요."));
+
+    return fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+        "anthropic-dangerous-direct-browser-access": "true"
+      },
+      body: JSON.stringify({
+        model: MODEL,
+        max_tokens: 3000,
+        messages: [{
+          role: "user",
+          content: [
+            { type: "image", source: { type: "base64", media_type: state.mime, data: state.b64 } },
+            { type: "text", text: promptText }
+          ]
+        }]
+      })
+    }).then(function (res) {
+      return res.text().then(function (raw) {
+        if (!res.ok) {
+          var detail = raw;
+          try {
+            var j = JSON.parse(raw);
+            if (j && j.error && j.error.message) detail = j.error.message;
+          } catch (e) { /* keep raw */ }
+          if (res.status === 401) throw new Error("인증 실패 (401)\nAPI 키가 잘못되었거나 만료되었습니다.\n" + detail);
+          if (res.status === 400) throw new Error("요청 오류 (400)\n" + detail);
+          if (res.status === 429) throw new Error("요청이 몰렸습니다 (429)\n잠시 후 다시 시도해 주세요.\n" + detail);
+          if (res.status >= 500) throw new Error("서버 오류 (" + res.status + ")\n잠시 후 다시 시도해 주세요.");
+          throw new Error("API 오류 (" + res.status + ")\n" + detail);
+        }
+        var data = JSON.parse(raw);
+        var out = "";
+        if (data && data.content && data.content.length) {
+          for (var i = 0; i < data.content.length; i++) {
+            if (data.content[i].type === "text") out += data.content[i].text;
+          }
+        }
+        if (!out) throw new Error("빈 응답을 받았습니다. 다시 시도해 주세요.");
+        return out;
+      });
+    }, function () {
+      throw new Error("네트워크 요청에 실패했습니다.\n인터넷 연결 또는 브라우저 확장(광고 차단 등)이 요청을 막았을 수 있습니다.");
+    });
+  }
+
+  function stripFence(s) {
+    var t = String(s).trim();
+    t = t.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "").trim();
+    var a = t.indexOf("{");
+    var b = t.lastIndexOf("}");
+    if (a > -1 && b > a) t = t.slice(a, b + 1);
+    return t;
+  }
+  function parseResult(raw) {
+    var cleaned = stripFence(raw);
+    var obj = JSON.parse(cleaned);
+    if (!obj || !obj.posts || !obj.posts.length) throw new Error("posts 없음");
+    return obj;
+  }
+
+  /* ---------------- loading ---------------- */
+  var loadTimer = null;
+  function startLoading() {
+    var i = 0;
+    elLoadMsg.textContent = LOAD_MSGS[0];
+    elLoading.classList.remove("hidden");
+    if (loadTimer) clearInterval(loadTimer);
+    loadTimer = setInterval(function () {
+      i = (i + 1) % LOAD_MSGS.length;
+      elLoadMsg.style.animation = "none";
+      void elLoadMsg.offsetWidth;
+      elLoadMsg.style.animation = "";
+      elLoadMsg.textContent = LOAD_MSGS[i];
+    }, 2200);
+  }
+  function stopLoading() {
+    if (loadTimer) clearInterval(loadTimer);
+    loadTimer = null;
+    elLoading.classList.add("hidden");
+  }
+
+  /* ---------------- render ---------------- */
+  function render() {
+    if (!state.posts.length) {
+      elOut.innerHTML = "";
+      elBottom.classList.add("hidden");
+      return;
+    }
+    var html = "";
+    if (state.read) {
+      html += '<div class="read"><b>READ</b>' + esc(state.read) + "</div>";
+    }
+    state.posts.forEach(function (p, i) {
+      var body = String(p.body == null ? "" : p.body);
+      var n = body.length;
+      var tags = (p.hashtags || []).filter(function (t) { return t && String(t).trim(); })
+        .map(function (t) { var s = String(t).trim(); return s.charAt(0) === "#" ? s : "#" + s; });
+      html += '<div class="card" data-i="' + i + '">';
+      html += '<div class="chead"><div class="tone">' + esc(p.tone || TONES[i] && TONES[i].tone || "") + '</div>' +
+              '<div class="goal">' + esc(p.goal || (TONES[i] && TONES[i].goal) || "") + "</div></div>";
+      html += '<div class="body">' + esc(body) + "</div>";
+      if (tags.length) html += '<div class="tags">' + esc(tags.join(" ")) + "</div>";
+      if (p.first_comment) {
+        html += '<details class="fc"><summary>첫 댓글 제안</summary><div class="fcbody">' + esc(p.first_comment) + "</div></details>";
+      }
+      html += '<div class="cfoot">';
+      html += '<span class="cnt' + (n > 500 ? " over" : "") + '">' + n + "자" + (n > 500 ? " · 500자 초과" : "") + "</span>";
+      html += '<button class="btn pri" data-act="copy" data-i="' + i + '" type="button">복사</button>';
+      html += '<button class="btn" data-act="regen" data-i="' + i + '" type="button">이 결로 다시</button>';
+      html += "</div></div>";
+    });
+    elOut.innerHTML = html;
+    elBottom.classList.remove("hidden");
+  }
+
+  elOut.addEventListener("click", function (e) {
+    var btn = e.target.closest ? e.target.closest("button[data-act]") : null;
+    if (!btn) return;
+    var i = parseInt(btn.getAttribute("data-i"), 10);
+    var act = btn.getAttribute("data-act");
+    if (act === "copy") {
+      var p = state.posts[i];
+      if (!p) return;
+      var tags = (p.hashtags || []).filter(function (t) { return t && String(t).trim(); })
+        .map(function (t) { var s = String(t).trim(); return s.charAt(0) === "#" ? s : "#" + s; });
+      copyText(String(p.body || "") + (tags.length ? "\n\n" + tags.join(" ") : ""));
+    } else if (act === "regen") {
+      regenOne(i, btn);
+    }
+  });
+
+  function regenOne(i, btn) {
+    if (!state.b64) { showErr("사진이 없습니다. 다시 올려주세요."); return; }
+    clearErr();
+    btn.disabled = true;
+    var old = btn.textContent;
+    btn.textContent = "다시 쓰는 중…";
+    callAPI(buildSinglePrompt(i))
+      .then(function (raw) {
+        var obj;
+        try { obj = parseResult(raw); }
+        catch (e) { throw new Error("__RETRY__"); }
+        return obj;
+      })
+      .catch(function (e) {
+        if (e && e.message === "__RETRY__") {
+          return callAPI(buildSinglePrompt(i)).then(function (raw2) { return parseResult(raw2); });
+        }
+        throw e;
+      })
+      .then(function (obj) {
+        var np = obj.posts[0];
+        np.tone = np.tone || TONES[i].tone;
+        np.goal = np.goal || TONES[i].goal;
+        state.posts[i] = np;
+        render();
+        saveHistory();
+        toast("다시 썼습니다");
+      })
+      .catch(function (e) {
+        btn.disabled = false;
+        btn.textContent = old;
+        showErr("재생성 실패 — " + (e.message || String(e)));
+      });
+  }
+
+  /* ---------------- generate ---------------- */
+  elGo.addEventListener("click", function () {
+    if (!getKey()) { syncBanner(); showErr("API 키를 먼저 입력하고 저장해 주세요."); window.scrollTo({ top: 0, behavior: "smooth" }); return; }
+    if (!state.b64) { showErr("사진을 먼저 올려주세요. 드래그, 클릭 선택, Ctrl+V 모두 됩니다."); return; }
+
+    clearErr();
+    state.posts = [];
+    state.read = "";
+    render();
+    elGo.disabled = true;
+    startLoading();
+
+    var rawKeep = "";
+    callAPI(buildFullPrompt())
+      .then(function (raw) {
+        rawKeep = raw;
+        try { return parseResult(raw); }
+        catch (e) { throw new Error("__RETRY__"); }
+      })
+      .catch(function (e) {
+        if (e && e.message === "__RETRY__") {
+          return callAPI(buildFullPrompt()).then(function (raw2) {
+            rawKeep = raw2;
+            return parseResult(raw2);
+          });
+        }
+        throw e;
+      })
+      .then(function (obj) {
+        state.read = obj.read || "";
+        state.posts = obj.posts.slice(0, 5).map(function (p, i) {
+          return {
+            tone: p.tone || (TONES[i] && TONES[i].tone) || ("톤 " + (i + 1)),
+            goal: p.goal || (TONES[i] && TONES[i].goal) || "",
+            body: p.body || "",
+            first_comment: p.first_comment || "",
+            hashtags: Array.isArray(p.hashtags) ? p.hashtags : []
+          };
+        });
+        render();
+        saveHistory();
+        var top = elOut.getBoundingClientRect().top + window.pageYOffset - 20;
+        window.scrollTo({ top: top, behavior: "smooth" });
+      })
+      .catch(function (e) {
+        if (rawKeep) {
+          state.read = "";
+          state.posts = [{
+            tone: "원문 (JSON 파싱 실패)",
+            goal: "확인 필요",
+            body: rawKeep,
+            first_comment: "",
+            hashtags: []
+          }];
+          render();
+          showErr("응답을 JSON으로 읽지 못했습니다. 2회 시도 후 실패해 모델의 원문을 그대로 아래에 표시합니다. 다시 생성하면 대개 정상으로 돌아옵니다.");
+        } else {
+          showErr(e.message || String(e));
+        }
+      })
+      .then(function () {
+        stopLoading();
+        elGo.disabled = false;
+      });
+  });
+
+  /* ---------------- bottom ---------------- */
+  $("copyAll").addEventListener("click", function () {
+    if (!state.posts.length) { toast("복사할 글이 없습니다"); return; }
+    var chunks = state.posts.map(function (p, i) {
+      var tags = (p.hashtags || []).filter(function (t) { return t && String(t).trim(); })
+        .map(function (t) { var s = String(t).trim(); return s.charAt(0) === "#" ? s : "#" + s; });
+      var s = "── " + (i + 1) + ". " + (p.tone || "") + (p.goal ? " · " + p.goal : "") + " ──\n\n" + String(p.body || "");
+      if (tags.length) s += "\n\n" + tags.join(" ");
+      if (p.first_comment) s += "\n\n[첫 댓글] " + p.first_comment;
+      return s;
+    });
+    copyText(chunks.join("\n\n\n"));
+  });
+
+  $("reset").addEventListener("click", function () {
+    state.b64 = null; state.dataUrl = null; state.thumb = null;
+    state.posts = []; state.read = "";
+    state.sit = "자동감지"; state.spk = "자동"; state.len = "보통(300자)";
+    buildChips("gSit", SITUATIONS, state.sit, function (v) { state.sit = v; });
+    buildChips("gSpk", SPEAKERS, state.spk, function (v) { state.spk = v; });
+    buildChips("gLen", LENGTHS, state.len, function (v) { state.len = v; });
+    $("ctx").value = "";
+    elPrev.classList.add("hidden");
+    elDrop.classList.remove("hidden");
+    clearErr();
+    render();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    toast("초기화됨");
+  });
+
+  /* ---------------- history ---------------- */
+  function loadHistory() {
+    try {
+      var raw = localStorage.getItem(LS_HIST);
+      if (!raw) return [];
+      var arr = JSON.parse(raw);
+      return Array.isArray(arr) ? arr : [];
+    } catch (e) { return []; }
+  }
+  function saveHistory() {
+    if (!state.posts.length) return;
+    var list = loadHistory();
+    var entry = {
+      ts: Date.now(),
+      thumb: state.thumb || "",
+      read: state.read || "",
+      first: String((state.posts[0] && state.posts[0].body) || "").split("\n")[0],
+      sit: state.sit, spk: state.spk, len: state.len,
+      posts: state.posts
+    };
+    list.unshift(entry);
+    list = list.slice(0, 3);
+    try { localStorage.setItem(LS_HIST, JSON.stringify(list)); }
+    catch (e) {
+      try { localStorage.setItem(LS_HIST, JSON.stringify(list.slice(0, 1))); } catch (e2) { /* 저장 공간 부족 — 무시 */ }
+    }
+    renderHistory();
+  }
+  function fmtTime(ts) {
+    var d = new Date(ts);
+    function p(n) { return n < 10 ? "0" + n : "" + n; }
+    return (d.getMonth() + 1) + "/" + d.getDate() + " " + p(d.getHours()) + ":" + p(d.getMinutes());
+  }
+  function renderHistory() {
+    var list = loadHistory();
+    if (!list.length) { elHist.classList.add("hidden"); return; }
+    elHist.classList.remove("hidden");
+    elHistList.innerHTML = list.map(function (h, i) {
+      var label = h.read || h.first || "제목 없음";
+      return '<div class="hitem" data-h="' + i + '">' +
+             (h.thumb ? '<img src="' + esc(h.thumb) + '" alt="">' : '<img alt="">') +
+             '<div class="ht"><div class="h1">' + esc(label) + "</div>" +
+             '<div class="h2">' + esc(fmtTime(h.ts)) + " · " + esc(h.sit || "") + " · " + esc(h.len || "") + " · 불러오기</div></div></div>";
+    }).join("");
+  }
+  elHistList.addEventListener("click", function (e) {
+    var item = e.target.closest ? e.target.closest(".hitem") : null;
+    if (!item) return;
+    var idx = parseInt(item.getAttribute("data-h"), 10);
+    var list = loadHistory();
+    var h = list[idx];
+    if (!h) return;
+    state.read = h.read || "";
+    state.posts = h.posts || [];
+    render();
+    toast("불러왔습니다");
+    var top = elOut.getBoundingClientRect().top + window.pageYOffset - 20;
+    window.scrollTo({ top: top, behavior: "smooth" });
+  });
+  renderHistory();
+
+})();
+</script>
+</body>
+</html>
